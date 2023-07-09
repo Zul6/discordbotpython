@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import random as rand
-import asyncio  # Import asyncio module
+import asyncio
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=".", intents=intents)
@@ -20,6 +20,13 @@ async def on_message(message):
 
     if message.channel.name == "buds":  # Check if the channel name is "buds"
         if message.author.name not in [member[0] for member in member_list]:
+            member_roles = [role.name.lower() for role in message.author.roles]  # Get lowercase role names of the member
+            roles_to_ignore = ["owner", "role2", "role3"]  # Add the role names to ignore in this list
+
+            if any(role in roles_to_ignore for role in member_roles):
+                print(f"Ignored member: {message.author.name}")
+                return
+
             member_list.append((message.author.name, message.author.id))
             print(f"Added member: {message.author.name}")
 
@@ -71,17 +78,28 @@ async def reset_after_duel():
     member_list = []
 
 
-@bot.command()
-async def random(ctx):
-    members = [member for member in ctx.guild.members if not member.bot]
-    if not members:
-        await ctx.send("There are no non-bot members in this server.")
+@bot.event
+async def on_member_join(member):
+    if member.bot:
         return
 
-    random_member = rand.choice(members)
-    await ctx.send(f"Random member name: {random_member.name}")
-    await challenge_duel(ctx.channel, (random_member.name, random_member.id))
-    await reset_after_duel()
+    if member.guild is not None:
+        member_roles = [role.name.lower() for role in member.roles]  # Get lowercase role names of the member
+        roles_to_ignore = ["owner", "role2", "role3"]  # Add the role names to ignore in this list
 
+        if any(role in roles_to_ignore for role in member_roles):
+            print(f"Ignored member: {member.name}")
+            return
+
+        member_list.append((member.name, member.id))
+        print(f"Added member: {member.name}")
+
+        if len(member_list) >= 2:
+            winner = rand.choice(member_list)
+            print(f"The winner is: {winner[0]}!")
+            channel = discord.utils.get(member.guild.channels, name="buds")  # Adjust the channel name accordingly
+            await channel.send(f"The winner is: {winner[0]}!")
+            await challenge_duel(channel, winner)
+            await reset_after_duel()
 
 bot.run("Key goes here")
