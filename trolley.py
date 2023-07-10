@@ -103,4 +103,5 @@ async def timeout(member, duration):
 async def reset_after_duel():
     global member_list
     member_list = []
+    
 bot.run("Key goes here")
