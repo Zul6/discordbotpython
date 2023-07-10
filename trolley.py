@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import random as rand
 import asyncio
+from discord import Message
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='/', intents=intents)
@@ -72,9 +73,9 @@ async def challenge_duel(channel, winner):
                 await channel.send(f"{winner_member.mention}, you have lost the duel. Prepare to be kicked!")
                 member_to_kick = discord.utils.get(channel.guild.members, name=winner[0])
                 await member_to_kick.kick(reason="Lost dice duel")
-            elif action == "timeout":
-                await channel.send(f"{winner_member.mention}, you have lost the duel. You will be timed out for 60 seconds.")
-                await timeout(winner_member, 60)
+            elif player_dice_roll < bot_roll:
+                await channel.send("I win the duel! Better luck next time, human.")
+                await timeout(channel, winner_member, duration="60s", reason="Lost dice duel")
                 await channel.send(f"{winner_member.mention}, your timeout has expired. You can now participate again.")
             else:
                 new_nickname = f"Loser-{winner_member.name}"
@@ -88,17 +89,15 @@ async def challenge_duel(channel, winner):
         await channel.send(f"{winner_member.mention}, you took too long to roll the dice. The duel is forfeited.")
         await reset_after_duel()
 
-async def timeout(member, duration):
-    timeout_role = discord.utils.get(member.guild.roles, name="Timeout")
-    if timeout_role is None:
-        print("Timeout role not found")
+@bot.command()
+async def timeout(ctx, member: discord.Member, duration=None, *, reason=None):
+    if duration is None:
+        await ctx.send("Please specify the timeout duration.")
         return
 
-    await member.add_roles(timeout_role)
+    command_text = f"/timeout {member.mention} {duration} {reason}"
+    await bot.process_commands(ctx.message)
 
-    await asyncio.sleep(duration)
-
-    await member.remove_roles(timeout_role)
 
 async def reset_after_duel():
     global member_list
