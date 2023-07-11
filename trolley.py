@@ -102,5 +102,5 @@ async def timeout(ctx, member: discord.Member, duration=None, *, reason=None):
 async def reset_after_duel():
     global member_list
     member_list = []
-    
+
 bot.run("Key goes here")
